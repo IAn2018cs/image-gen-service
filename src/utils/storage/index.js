@@ -12,7 +12,7 @@ function getStorage() {
 
   storageInstance = new LocalFileStorage({
     storagePath: config.localStoragePath,
-    urlPrefix: config.localFileUrlPrefix,
+    urlPrefix: config.imageBaseUrl,
   });
 
   return storageInstance;

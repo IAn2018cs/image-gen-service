@@ -21,7 +21,10 @@ const config = {
 
   // Storage
   localStoragePath: process.env.LOCAL_STORAGE_PATH || '/data/images',
-  localFileUrlPrefix: process.env.LOCAL_FILE_URL_PREFIX || 'http://localhost:3100/images',
+  imageBaseUrl: process.env.IMAGE_BASE_URL || 'http://localhost:3100',
+
+  // MCP server (disabled when not set)
+  mcpPort: process.env.MCP_PORT ? parseInt(process.env.MCP_PORT, 10) : null,
 };
 
 module.exports = config;

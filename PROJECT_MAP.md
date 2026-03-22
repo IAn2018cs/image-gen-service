@@ -10,26 +10,37 @@
 ```
 Client Request
      │
-     ▼
-  index.js          Express 入口，挂载 /v1 路由 + /health
+     ├──► REST API (port 3100)
+     │         │
+     │         ▼
+     │      index.js          Express 入口，挂载 /v1 路由 + /health
+     │         │
+     │         ▼
+     │      routes/images.js  路由层：解析请求 → 调 Provider → 调 Storage → 返回 URL
+     │         │
+     │         ├──► POST /v1/images/generations   文生图
+     │         │      1. 校验 model + prompt
+     │         │      2. getProvider(model).generate(params)
+     │         │      3. saveAndReturnUrls(images, output_format)
+     │         │      4. 返回 { created, model, data: [{ url }] }
+     │         │
+     │         ├──► POST /v1/images/edits         图片编辑（JSON / multipart 双模式）
+     │         │      1. 检测 Content-Type
+     │         │      2. JSON 模式: parseImageInput() 解析 data URI / URL
+     │         │         multipart 模式: multer 解析 image[] 文件
+     │         │      3. getProvider(model).edit({ prompt, images, ...params })
+     │         │      4. saveAndReturnUrls → 返回 URL
+     │         │
+     │         └──► GET /v1/models               列出所有模型及能力
      │
-     ▼
-  routes/images.js  路由层：解析请求 → 调 Provider → 调 Storage → 返回 URL
-     │
-     ├──► POST /v1/images/generations   文生图
-     │      1. 校验 model + prompt
-     │      2. getProvider(model).generate(params)
-     │      3. saveAndReturnUrls(images, output_format)
-     │      4. 返回 { created, model, data: [{ url }] }
-     │
-     ├──► POST /v1/images/edits         图片编辑（JSON / multipart 双模式）
-     │      1. 检测 Content-Type
-     │      2. JSON 模式: parseImageInput() 解析 data URI / URL
-     │         multipart 模式: multer 解析 image[] 文件
-     │      3. getProvider(model).edit({ prompt, images, ...params })
-     │      4. saveAndReturnUrls → 返回 URL
-     │
-     └──► GET /v1/models               列出所有模型及能力
+     └──► MCP Server (port 3101, 需 MCP_PORT 环境变量)
+               │
+               ▼
+            src/mcp.mjs       fastmcp httpStream 服务（ESM 模块）
+               │
+               ├──► tool: generate_image   → 内调 POST /v1/images/generations
+               ├──► tool: edit_image       → 内调 POST /v1/images/edits
+               └──► tool: list_models      → 内调 GET /v1/models
 ```
 
 ### 数据流: Provider 输出 → Storage
@@ -50,14 +61,15 @@ saveAndReturnUrls(images, outputFormat)
 
 ```
 image-service/
-├── package.json                 # 依赖: express, axios, sharp, openai, uuid, winston, dotenv, form-data, multer
+├── package.json                 # 依赖: express, axios, sharp, openai, uuid, winston, dotenv, form-data, multer, fastmcp, zod
 ├── Dockerfile                   # node:20-alpine + sharp 原生依赖
-├── docker-compose.yml           # 单服务 + 本地路径挂载 (./data/images)
+├── docker-compose.yml           # 单服务 + 本地路径挂载 (./data/images)，映射 3100+3101
 ├── .env.example                 # 环境变量模板
 ├── .dockerignore
 ├── src/
-│   ├── index.js                 # Express 入口 (body limit 50mb, 请求日志, 全局错误)
-│   ├── config.js                # 环境变量集中加载 (dotenv)
+│   ├── index.js                 # Express 入口 (body limit 50mb, 请求日志, 全局错误)；MCP_PORT 有值时 dynamic import mcp.mjs
+│   ├── config.js                # 环境变量集中加载 (dotenv)，含 mcpPort
+│   ├── mcp.mjs                  # MCP 服务入口 (ESM)：fastmcp httpStream，3 个 tool，绑定 0.0.0.0
 │   ├── routes/
 │   │   └── images.js            # 路由层 (generations/edits/models)
 │   ├── providers/
@@ -170,7 +182,7 @@ BaseStorage (接口)
 
 LocalFileStorage (当前实现)
 ├── 写入路径: {LOCAL_STORAGE_PATH}/{YYYY}/{MM}/{DD}/{uuid}.{ext}
-├── 返回 URL:  {LOCAL_FILE_URL_PREFIX}/{YYYY}/{MM}/{DD}/{uuid}.{ext}
+├── 返回 URL:  {IMAGE_BASE_URL}/images/{YYYY}/{MM}/{DD}/{uuid}.{ext}
 └── Express 以 /images 静态路由提供访问 (src/index.js)
 ```
 
@@ -188,7 +200,8 @@ LocalFileStorage (当前实现)
 | **Gemini** | `GEMINI_API_KEY`, `GEMINI_BASE_URL` | Gemini, Gemini3, Gemini31Flash |
 | **ARK** | `ARK_API_KEY`, `ARK_BASE_URL` | Seedream, Seedream45 |
 | **OpenAI** | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | OpenAI, OpenAIMini, OpenAI15 |
-| **存储** | `LOCAL_STORAGE_PATH`, `LOCAL_FILE_URL_PREFIX` | LocalFileStorage |
+| **存储** | `LOCAL_STORAGE_PATH`, `IMAGE_BASE_URL` | LocalFileStorage |
+| **MCP** | `MCP_PORT` (3101, 不设则不启动) | mcp.mjs |
 | **Docker** | (无额外变量，使用 bind mount) | docker-compose.yml volumes |
 
 ---
@@ -259,8 +272,13 @@ LocalFileStorage (当前实现)
 services:
   image-service:
     build: .
-    ports: ["${IMAGE_SERVICE_PORT:-3100}:3100"]
+    ports:
+      - "${IMAGE_SERVICE_PORT:-3100}:3100"
+      - "${MCP_PORT:-3101}:3101"
     env_file: .env
+    environment:
+      - PORT=3100
+      - MCP_PORT=3101
     volumes:
       - ./data/images:${LOCAL_STORAGE_PATH:-/data/images}  # bind mount
 ```
@@ -268,3 +286,4 @@ services:
 - 宿主机 `./data/images` 映射到容器内 `LOCAL_STORAGE_PATH`，图片直接落盘到项目目录
 - Dockerfile 基于 `node:20-alpine`，安装 sharp 原生依赖 (python3, make, g++, vips-dev)
 - `npm ci --production` 仅安装生产依赖
+- MCP server (`mcp.mjs`) 以 ESM 动态 import 方式在 Express 启动后启动，绑定 `0.0.0.0:3101`

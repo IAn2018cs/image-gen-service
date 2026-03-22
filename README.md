@@ -42,6 +42,60 @@ npm install
 npm run dev    # 带热重载
 ```
 
+## MCP 接入
+
+服务内置 [MCP](https://modelcontextprotocol.io/) 服务器（基于 [fastmcp](https://github.com/punkpeye/fastmcp)），支持将图片生成能力直接接入 Claude Desktop、Cursor 等任意 MCP 兼容客户端，无需额外脚本。
+
+### 启用 MCP
+
+在 `.env` 中设置 `MCP_PORT`（Docker 部署默认已开启）：
+
+```bash
+MCP_PORT=3101
+```
+
+重启服务后，MCP 服务器会随主服务一同启动：
+
+```
+[FastMCP info] server is running on HTTP Stream at http://localhost:3101/mcp
+```
+
+### 客户端配置
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)：
+
+```json
+{
+  "mcpServers": {
+    "image-gen": {
+      "url": "http://localhost:3101/mcp"
+    }
+  }
+}
+```
+
+**Cursor / 其他支持 MCP 的工具**，填入 HTTP Stream 地址：
+
+```
+http://localhost:3101/mcp
+```
+
+SSE 兼容地址（旧版客户端）：
+
+```
+http://localhost:3101/sse
+```
+
+### 可用 Tools
+
+| Tool | 说明 | 必填参数 |
+|---|---|---|
+| `generate_image` | 文生图 | `model`, `prompt` |
+| `edit_image` | 图片编辑 | `model`, `prompt`, `images`（URL 数组） |
+| `list_models` | 列出所有模型及能力 | — |
+
+所有可选参数（`aspect_ratio`、`size`、`n`、`output_format` 等）均与 REST API 一致，见[可选参数](#可选参数)。
+
 ## AI 编码助手技能集成
 
 服务启动后，可将 `image-gen` 技能安装到 AI 编码助手中，之后直接用自然语言指令生图改图。

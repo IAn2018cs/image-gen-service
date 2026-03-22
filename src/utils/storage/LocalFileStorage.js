@@ -16,7 +16,7 @@ class LocalFileStorage extends BaseStorage {
   constructor({ storagePath, urlPrefix }) {
     super();
     this.storagePath = storagePath;
-    this.urlPrefix = urlPrefix.replace(/\/+$/, '');
+    this.urlPrefix = urlPrefix.replace(/\/+$/, '') + '/images';
   }
 
   _getDatePath() {

@@ -10,11 +10,12 @@
 
 | 入口 | 路径 | 说明 |
 |---|---|---|
-| Express 启动 | `src/index.js` | 端口、中间件、路由挂载 |
+| Express 启动 | `src/index.js` | 端口、中间件、路由挂载；MCP_PORT 有值时动态 import 启动 MCP |
 | 配置集中 | `src/config.js` | 所有环境变量在此加载 |
 | API 路由 | `src/routes/images.js` | 三个端点: generations / edits / models |
 | Provider 注册 | `src/providers/index.js` | model → Provider 映射，新增模型改这里 |
 | 存储工厂 | `src/utils/storage/index.js` | 存储策略切换改这里 |
+| MCP 服务 | `src/mcp.mjs` | fastmcp httpStream 服务，暴露 generate_image / edit_image / list_models |
 
 ## 常改入口
 
@@ -54,7 +55,8 @@ ls src/utils/storage/
 - **Gemini**: GEMINI_API_KEY, GEMINI_BASE_URL
 - **ARK**: ARK_API_KEY, ARK_BASE_URL (Seedream/Seedream45)
 - **OpenAI**: OPENAI_API_KEY, OPENAI_BASE_URL
-- **存储**: LOCAL_STORAGE_PATH, LOCAL_FILE_URL_PREFIX
+- **存储**: LOCAL_STORAGE_PATH, IMAGE_BASE_URL
+- **MCP**: MCP_PORT（不设则不启动 MCP 服务，默认 3101）
 
 ## 活文档
 

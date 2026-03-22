@@ -4,10 +4,12 @@ services:
     build: .
     ports:
       - "${IMAGE_SERVICE_PORT:-3100}:3100"
+      - "${MCP_PORT:-3101}:3101"
     restart: always
     env_file:
       - .env
     environment:
       - PORT=3100
+      - MCP_PORT=3101
     volumes:
-      - ./data/images:${LOCAL_STORAGE_PATH:-/data/images}
+      - ./data/images:/data/images
