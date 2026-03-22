@@ -3,7 +3,7 @@ name: image-gen
 description: >
   使用内网图片生成服务（http://localhost:3100/）生成或编辑图片。
   当用户说"帮我生成一张图"、"画一张..."、"生图"、"文生图"、"改图"、"图片编辑"、"PS一下"、
-  "用 flux/gemini/seedream/hunyuan/openai/qwen 生成"、"换个风格"、"修改图片"等时，
+  "用 flux/nano-banana/seedream/hunyuan/openai/qwen 生成"、"换个风格"、"修改图片"等时，
   必须使用此技能。支持 13 个模型，生成结果优先保存到用户当前项目目录。
   即使用户没有明确说"用这个服务"，只要涉及 AI 生图或改图，都应该主动使用此技能。
 ---
@@ -16,7 +16,7 @@ description: >
 
 1. **判断操作类型**：是生图（无参考图）还是改图（有参考图）
 2. **确认模型**：
-   - 用户**未指定模型**时，默认使用 `gemini31flash`，直接执行，无需询问
+   - 用户**未指定模型**时，默认使用 `nano-banana-2`，直接执行，无需询问
    - 用户**主动要求换模型**时，使用 `AskUserQuestion` 工具弹出选择列表（见下方"换模型"说明）
 3. **确认参数**：提示词、尺寸等
 4. **执行调用**：运行 `scripts/call_image_service.py`
@@ -34,9 +34,9 @@ description: >
 问题：请选择要使用的模型
 选项（画质从强到弱）：
   Nano Banana 系列（最强）：
-    - gemini3        Nano Banana Pro，最强画质，细节丰富
-    - gemini31flash  Nano Banana 2（默认），速度快，适合迭代
-    - gemini         Nano Banana，擅长复杂构图、图文混排
+    - nano-banana-pro  Nano Banana Pro，最强画质，细节丰富
+    - nano-banana-2    Nano Banana 2（默认），速度快，适合迭代
+    - nano-banana      Nano Banana，擅长复杂构图、图文混排
   OpenAI 系列：
     - openai-15      gpt-image-1.5，最新版
     - openai         gpt-image-1，通用，写实与插画
@@ -62,9 +62,9 @@ description: >
 
 | 模型 ID         | 底层模型                           | 生图 | 改图 | 特点 / 适用场景 |
 |----------------|------------------------------------|:----:|:----:|----------------|
-| `gemini3`       | Nano Banana Pro                    | ✓    | ✓    | 画质最强，细节丰富 |
-| `gemini31flash` | Nano Banana 2                      | ✓    | ✓    | **默认**，速度快，适合迭代调整 |
-| `gemini`        | Nano Banana                        | ✓    | ✓    | 擅长复杂构图，图文混排 |
+| `nano-banana-pro` | Nano Banana Pro                    | ✓    | ✓    | 画质最强，细节丰富 |
+| `nano-banana-2`   | Nano Banana 2                      | ✓    | ✓    | **默认**，速度快，适合迭代调整 |
+| `nano-banana`     | Nano Banana                        | ✓    | ✓    | 擅长复杂构图，图文混排 |
 | `openai-15`     | gpt-image-1.5                      | ✓    | ✓    | 最新 OpenAI 版本 |
 | `openai`        | gpt-image-1                        | ✓    | ✓    | 通用，擅长写实与插画 |
 | `openai-mini`   | gpt-image-1-mini                   | ✓    | ✗    | 轻量版，速度最快，**不支持改图** |

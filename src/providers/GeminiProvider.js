@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 
 class GeminiProvider extends BaseProvider {
   constructor() {
-    super({ name: 'gemini', supportsGeneration: true, supportsEditing: true });
+    super({ name: 'nano-banana', supportsGeneration: true, supportsEditing: true });
   }
 
   async _callAPI({ prompt, images = [], aspectRatio }) {

@@ -126,7 +126,7 @@ def main():
     parser.add_argument("--mode", choices=["generate", "edit"], required=True,
                         help="操作类型: generate（生图）或 edit（改图）")
     parser.add_argument("--model", required=True,
-                        help="模型 ID，如 flux / gemini / seedream / hunyuan 等")
+                        help="模型 ID，如 flux / nano-banana / seedream / hunyuan 等")
     parser.add_argument("--prompt", required=True, help="文字提示词")
     parser.add_argument("--output-dir", default="./generated_images",
                         help="图片保存目录（默认: ./generated_images）")

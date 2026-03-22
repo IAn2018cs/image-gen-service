@@ -21,6 +21,9 @@ app.use((req, res, next) => {
 // Routes
 app.use('/v1', imageRoutes);
 
+// Serve generated images
+app.use('/images', express.static(config.localStoragePath));
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });

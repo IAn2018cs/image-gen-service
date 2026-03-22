@@ -10,11 +10,4 @@ services:
     environment:
       - PORT=3100
     volumes:
-      - nas_images:${NAS_MOUNT_PATH:-/mnt/nas/images}
-
-volumes:
-  nas_images:
-    driver_opts:
-      type: cifs
-      o: "addr=${NAS_HOST},username=${NAS_USER},password=${NAS_PASSWORD},port=${NAS_PORT:-445},file_mode=0777,dir_mode=0777"
-      device: "//${NAS_HOST}/${NAS_SHARE_PATH}"
+      - ./data/images:${LOCAL_STORAGE_PATH:-/data/images}

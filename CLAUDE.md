@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-统一图片生成与编辑 API 服务。根据 `model` 参数路由到 13 个上游 Provider，生成的图片保存到 NAS 并返回 URL。内网部署，无需认证。
+统一图片生成与编辑 API 服务。根据 `model` 参数路由到 13 个上游 Provider，生成的图片保存到本地目录并通过内置文件服务返回 URL。内网部署，无需认证。
 
 ## 工程入口
 
@@ -28,7 +28,7 @@
 - Provider 只返回 `Array<{buffer: Buffer, mimeType: string}>`，不关心存储
 - 路由层负责 Provider → Storage 的桥接 (saveAndReturnUrls)
 - 编辑接口同时支持 JSON body 和 multipart/form-data
-- 图片按日期存储: `{mountPath}/{YYYY}/{MM}/{DD}/{uuid}.{ext}`
+- 图片按日期存储: `{LOCAL_STORAGE_PATH}/{YYYY}/{MM}/{DD}/{uuid}.{ext}`，由 Express `/images` 静态路由提供访问
 - FAL 平台有两种模式: 队列轮询 (`falSubmitAndPoll`) 和同步直调 (`falDirectRequest`)，见 `src/utils/falPoller.js`
 
 ## 快速定位
@@ -54,8 +54,7 @@ ls src/utils/storage/
 - **Gemini**: GEMINI_API_KEY, GEMINI_BASE_URL
 - **ARK**: ARK_API_KEY, ARK_BASE_URL (Seedream/Seedream45)
 - **OpenAI**: OPENAI_API_KEY, OPENAI_BASE_URL
-- **存储**: STORAGE_TYPE, NAS_MOUNT_PATH, NAS_FILE_URL_PREFIX
-- **Docker NAS**: NAS_HOST, NAS_USER, NAS_PASSWORD, NAS_PORT, NAS_SHARE_PATH
+- **存储**: LOCAL_STORAGE_PATH, LOCAL_FILE_URL_PREFIX
 
 ## 活文档
 
