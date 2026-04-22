@@ -9,6 +9,7 @@ const HunyuanProvider = require('./HunyuanProvider');
 const { OpenAIProvider, OpenAIMiniProvider, OpenAI15Provider } = require('./OpenAIProvider');
 const QwenProvider = require('./QwenProvider');
 const DreamOmni2Provider = require('./DreamOmni2Provider');
+const FalGptImage2Provider = require('./FalGptImage2Provider');
 
 const providers = {
   flux: new FluxProvider(),
@@ -24,6 +25,7 @@ const providers = {
   'openai-15': new OpenAI15Provider(),
   qwen: new QwenProvider(),
   dreamomni2: new DreamOmni2Provider(),
+  'fal-gpt-image-2': new FalGptImage2Provider(),
 };
 
 /**

@@ -73,6 +73,7 @@ image-service/
 │   │   ├── OpenAIProvider.js    # OpenAI SDK + FormData (gpt-image-1 / mini / 1.5, 三合一)
 │   │   ├── QwenProvider.js      # FAL 同步 (qwen-image-2512 / qwen-image-edit-2511)
 │   │   ├── DreamOmni2Provider.js # FAL 队列 (仅编辑, 需恰好2张图, sharp 对齐尺寸)
+│   │   ├── FalGptImage2Provider.js # FAL 同步 (gpt-image-2, 生图+编辑, 支持 quality/mask)
 │   │   └── index.js             # Provider 注册表: model name → instance 映射
 │   └── utils/
 │       ├── logger.js            # winston 日志 (timestamp + level + message)
@@ -103,6 +104,7 @@ image-service/
 | `openai-15` | OpenAIProvider.js | Y | Y | OpenAI | SDK+FormData | `Bearer {OPENAI_API_KEY}` |
 | `qwen` | QwenProvider.js | Y | Y | FAL | 同步 | `Key {FAL_KEY}` |
 | `dreamomni2` | DreamOmni2Provider.js | N | Y | FAL | 队列轮询 | `Key {FAL_KEY}` |
+| `fal-gpt-image-2` | FalGptImage2Provider.js | Y | Y | FAL | 同步 | `Key {FAL_KEY}` |
 
 ---
 
@@ -184,7 +186,7 @@ LocalMountStorage (当前实现)
 | 分组 | 变量 | 使用者 |
 |---|---|---|
 | **服务** | `PORT` (3100), `LOG_LEVEL` (info) | index.js, logger.js |
-| **FAL** | `FAL_KEY` | Flux, Flux2Pro, Hunyuan, Qwen, DreamOmni2 |
+| **FAL** | `FAL_KEY` | Flux, Flux2Pro, Hunyuan, Qwen, DreamOmni2, FalGptImage2 |
 | **Gemini** | `GEMINI_API_KEY`, `GEMINI_BASE_URL` | Gemini, Gemini3, Gemini31Flash |
 | **ARK** | `ARK_API_KEY`, `ARK_BASE_URL` | Seedream, Seedream45 |
 | **OpenAI** | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | OpenAI, OpenAIMini, OpenAI15 |
@@ -229,6 +231,8 @@ LocalMountStorage (当前实现)
 | Flux2Pro Edit | `fal.run/fal-ai/flux-2-pro/edit` |
 | Qwen Gen | `fal.run/fal-ai/qwen-image-2512` |
 | Qwen Edit | `fal.run/fal-ai/qwen-image-edit-2511` |
+| FalGptImage2 Gen | `fal.run/openai/gpt-image-2` |
+| FalGptImage2 Edit | `fal.run/openai/gpt-image-2/edit` |
 
 ### Gemini 类
 | Provider | 模型 | 认证 |

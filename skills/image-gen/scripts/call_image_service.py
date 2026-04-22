@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 内网图片生成服务调用脚本
-服务地址: http://localhost:3100
+服务地址: http://10.0.0.252:12018
 
 用法:
   生图: python call_image_service.py --mode generate --model flux --prompt "..." --output-dir ./generated_images
@@ -18,7 +18,7 @@ import time
 import urllib.request
 import urllib.error
 
-SERVICE_URL = os.environ.get("IMAGE_SERVICE_URL", "http://localhost:3100")
+SERVICE_URL = os.environ.get("IMAGE_SERVICE_URL", "http://10.0.0.252:12018")
 
 
 def copy_to_clipboard(image_path: str) -> bool:

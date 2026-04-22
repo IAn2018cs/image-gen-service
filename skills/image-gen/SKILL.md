@@ -1,16 +1,16 @@
 ---
 name: image-gen
 description: >
-  使用内网图片生成服务（http://localhost:3100/）生成或编辑图片。
+  使用内网图片生成服务（http://10.0.0.252:12018/）生成或编辑图片。
   当用户说"帮我生成一张图"、"画一张..."、"生图"、"文生图"、"改图"、"图片编辑"、"PS一下"、
   "用 flux/gemini/seedream/hunyuan/openai/qwen 生成"、"换个风格"、"修改图片"等时，
-  必须使用此技能。支持 13 个模型，生成结果优先保存到用户当前项目目录。
+  必须使用此技能。支持 14 个模型，生成结果优先保存到用户当前项目目录。
   即使用户没有明确说"用这个服务"，只要涉及 AI 生图或改图，都应该主动使用此技能。
 ---
 
 # 内网图片生成服务
 
-服务地址（已内置，无需配置）：`http://localhost:3100`
+服务地址（已内置，无需配置）：`http://10.0.0.252:12018`
 
 ## 工作流程
 
@@ -38,6 +38,7 @@ description: >
     - gemini31flash  Nano Banana 2（默认），速度快，适合迭代
     - gemini         Nano Banana，擅长复杂构图、图文混排
   OpenAI 系列：
+    - fal-gpt-image-2 GPT Image 2，画质强，支持 quality/mask 编辑
     - openai-15      gpt-image-1.5，最新版
     - openai         gpt-image-1，通用，写实与插画
     - openai-mini    轻量版，速度最快，仅生图
@@ -65,6 +66,7 @@ description: >
 | `gemini3`       | Nano Banana Pro                    | ✓    | ✓    | 画质最强，细节丰富 |
 | `gemini31flash` | Nano Banana 2                      | ✓    | ✓    | **默认**，速度快，适合迭代调整 |
 | `gemini`        | Nano Banana                        | ✓    | ✓    | 擅长复杂构图，图文混排 |
+| `fal-gpt-image-2` | GPT Image 2                     | ✓    | ✓    | 画质强，支持 quality 和 mask 蒙版编辑 |
 | `openai-15`     | gpt-image-1.5                      | ✓    | ✓    | 最新 OpenAI 版本 |
 | `openai`        | gpt-image-1                        | ✓    | ✓    | 通用，擅长写实与插画 |
 | `openai-mini`   | gpt-image-1-mini                   | ✓    | ✗    | 轻量版，速度最快，**不支持改图** |
@@ -80,6 +82,7 @@ description: >
 - 中文创意生图 → `seedream45`
 - 精细控制（负向词、步数）→ `hunyuan`
 - 两图风格融合 → `dreamomni2`
+- 蒙版局部编辑 → `fal-gpt-image-2`
 
 ---
 
@@ -109,10 +112,21 @@ images        参考图数组，支持本地路径、http URL、data URI
 ```
 prompt        文字提示词（必填）
 aspect_ratio  宽高比（可选）
-image_size    分辨率（可选，Nano Banana Pro / Nano Banana 2 支持）
+image_size    分辨率（可选，Nano Banana Pro / Nano Banana 2 支持，默认 1K）
 ```
 
 **aspect_ratio 可选值：** `1:1`(1024×1024) `2:3`(832×1248) `3:2`(1248×832) `3:4`(864×1184) `4:3`(1184×864) `4:5`(896×1152) `5:4`(1152×896) `9:16`(768×1344) `16:9`(1344×768) `21:9`(1536×672)
+
+**image_size 可选值（Nano Banana Pro / Nano Banana 2）：**
+
+| image_size 值 | 分辨率     | 支持模型                              |
+|--------------|----------|--------------------------------------|
+| `1K`          | ~1024px  | gemini3、gemini31flash（**默认**）     |
+| `2K`          | ~2048px  | gemini3、gemini31flash                |
+| `4K`          | ~4096px  | gemini3、gemini31flash                |
+| `512`         | ~512px   | **仅 gemini31flash（Nano Banana 2）** |
+
+> **注意**：必须使用**大写 K**（如 `1K`、`2K`、`4K`），小写（如 `1k`）会被服务拒绝。`512` 无 K 后缀。
 
 **改图参数**（在生图基础上增加）：
 ```
@@ -153,6 +167,25 @@ seed                随机种子（可选），固定种子复现结果
 output_format       png（默认）/ jpeg
 ```
 - 不支持改图
+
+### fal-gpt-image-2（GPT Image 2）
+
+**生图参数：**
+```
+prompt        文字提示词（必填）
+n             生成数量，1-4，默认 1
+image_size    尺寸枚举：square_hd / square / portrait_4_3 / portrait_16_9 / landscape_4_3（默认）/ landscape_16_9
+quality       质量：low / medium / high（默认）
+output_format png（默认）/ jpeg / webp
+```
+
+**改图参数**（在生图基础上增加）：
+```
+images        参考图数组（本地路径 / http URL / data URI）
+mask          蒙版图片（可选），指定编辑区域
+image_size    默认 auto（保持原图尺寸）
+```
+- 支持 mask 蒙版，可精确控制编辑区域
 
 ### openai / openai-mini / openai-15（OpenAI 系列）
 
@@ -261,7 +294,15 @@ python3 <skill_dir>/scripts/call_image_service.py \
 --images /tmp/content.jpg --images /tmp/style.jpg
 ```
 
-### 6. 精细控制（hunyuan）
+### 6. 高分辨率生图（Nano Banana 4K）
+用户：生成一张 4K 的赛博朋克城市
+```bash
+--model gemini3 \
+--extra '{"image_size":"4K"}'
+```
+> 注意：必须大写 K，`4k` 会报错
+
+### 7. 精细控制（hunyuan）
 用户：生成一张竖版人像，不要模糊背景
 ```bash
 --model hunyuan \
@@ -272,7 +313,7 @@ python3 <skill_dir>/scripts/call_image_service.py \
 
 ## 注意事项
 
-- 服务在内网，确保网络可达 localhost:3100
+- 服务在内网，确保网络可达 10.0.0.252:12018
 - dreamomni2 改图**必须提供恰好 2 张图**，否则报错
 - hunyuan **不支持改图**，如用户要改图请切换到 flux
 - 生图完成后，告知用户图片保存路径，并尝试用 Read 工具展示图片

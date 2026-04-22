@@ -50,7 +50,7 @@ ls src/utils/storage/
 ## 环境变量分组 (详见 .env.example)
 
 - **服务**: PORT, LOG_LEVEL
-- **FAL**: FAL_KEY (Flux/Flux2Pro/Hunyuan/Qwen/DreamOmni2)
+- **FAL**: FAL_KEY (Flux/Flux2Pro/Hunyuan/Qwen/DreamOmni2/FalGptImage2)
 - **Gemini**: GEMINI_API_KEY, GEMINI_BASE_URL
 - **ARK**: ARK_API_KEY, ARK_BASE_URL (Seedream/Seedream45)
 - **OpenAI**: OPENAI_API_KEY, OPENAI_BASE_URL
