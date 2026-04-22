@@ -3,4 +3,5 @@ node_modules/
 *.log
 generated_images/
 .claude
+.idea
 data/
