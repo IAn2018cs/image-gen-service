@@ -4,17 +4,12 @@ services:
     build: .
     ports:
       - "${IMAGE_SERVICE_PORT:-3100}:3100"
+      - "${MCP_PORT:-3101}:3101"
     restart: always
     env_file:
       - .env
     environment:
       - PORT=3100
+      - MCP_PORT=3101
     volumes:
-      - nas_images:${NAS_MOUNT_PATH:-/mnt/nas/images}
-
-volumes:
-  nas_images:
-    driver_opts:
-      type: cifs
-      o: "addr=${NAS_HOST},username=${NAS_USER},password=${NAS_PASSWORD},port=${NAS_PORT:-445},file_mode=0777,dir_mode=0777"
-      device: "//${NAS_HOST}/${NAS_SHARE_PATH}"
+      - ./data/images:/data/images

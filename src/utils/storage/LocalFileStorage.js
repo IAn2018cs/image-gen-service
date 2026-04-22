@@ -4,25 +4,21 @@ const BaseStorage = require('./BaseStorage');
 const logger = require('../logger');
 
 /**
- * Storage implementation that writes to a locally mounted directory.
- * Suitable for NAS volumes mounted via Docker (SMB/CIFS/NFS).
+ * Storage implementation that writes to a local directory served by Express.
+ * Files are accessible at urlPrefix/YYYY/MM/DD/filename.
  */
-class LocalMountStorage extends BaseStorage {
+class LocalFileStorage extends BaseStorage {
   /**
    * @param {Object} options
-   * @param {string} options.mountPath - Local mount path (e.g. "/mnt/nas/images")
-   * @param {string} options.urlPrefix - URL prefix for file access (e.g. "http://192.168.1.100:8080/images")
+   * @param {string} options.storagePath - Absolute directory path (e.g. "/data/images")
+   * @param {string} options.urlPrefix  - Public URL prefix  (e.g. "http://localhost:3100/images")
    */
-  constructor({ mountPath, urlPrefix }) {
+  constructor({ storagePath, urlPrefix }) {
     super();
-    this.mountPath = mountPath;
-    this.urlPrefix = urlPrefix.replace(/\/+$/, ''); // strip trailing slashes
+    this.storagePath = storagePath;
+    this.urlPrefix = urlPrefix.replace(/\/+$/, '') + '/images';
   }
 
-  /**
-   * Get date-based subdirectory path (YYYY/MM/DD)
-   * @returns {string}
-   */
   _getDatePath() {
     const now = new Date();
     const y = now.getFullYear();
@@ -33,30 +29,25 @@ class LocalMountStorage extends BaseStorage {
 
   async save(buffer, filename, mimeType) {
     const datePath = this._getDatePath();
-    const dirPath = path.join(this.mountPath, datePath);
+    const dirPath = path.join(this.storagePath, datePath);
 
-    // Ensure directory exists
     await fs.promises.mkdir(dirPath, { recursive: true });
 
     const filePath = path.join(dirPath, filename);
     await fs.promises.writeFile(filePath, buffer);
 
-    const relativePath = `${datePath}/${filename}`;
-    const url = `${this.urlPrefix}/${relativePath}`;
-
+    const url = `${this.urlPrefix}/${datePath}/${filename}`;
     logger.info(`[Storage] Saved: ${filePath} -> ${url}`);
     return url;
   }
 
   async delete(filename) {
-    const filePath = path.join(this.mountPath, filename);
+    const filePath = path.join(this.storagePath, filename);
     try {
       await fs.promises.unlink(filePath);
       logger.info(`[Storage] Deleted: ${filePath}`);
     } catch (err) {
-      if (err.code !== 'ENOENT') {
-        throw err;
-      }
+      if (err.code !== 'ENOENT') throw err;
     }
   }
 
@@ -65,4 +56,4 @@ class LocalMountStorage extends BaseStorage {
   }
 }
 
-module.exports = LocalMountStorage;
+module.exports = LocalFileStorage;

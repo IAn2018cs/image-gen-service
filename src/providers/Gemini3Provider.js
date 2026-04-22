@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 
 class Gemini3Provider extends BaseProvider {
   constructor() {
-    super({ name: 'gemini3', supportsGeneration: true, supportsEditing: true });
+    super({ name: 'nano-banana-pro', supportsGeneration: true, supportsEditing: true });
   }
 
   async _callAPI({ prompt, images = [], aspectRatio, imageSize }) {
@@ -24,7 +24,7 @@ class Gemini3Provider extends BaseProvider {
     }
 
     const generationConfig = {
-      responseModalities: ['TEXT', 'IMAGE'],
+      responseModalities: ['IMAGE'],
     };
 
     if (aspectRatio || imageSize) {

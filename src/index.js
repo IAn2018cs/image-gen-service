@@ -21,6 +21,9 @@ app.use((req, res, next) => {
 // Routes
 app.use('/v1', imageRoutes);
 
+// Serve generated images
+app.use('/images', express.static(config.localStoragePath));
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
@@ -39,4 +42,16 @@ app.use((err, req, res, next) => {
 
 app.listen(config.port, () => {
   logger.info(`Image service listening on port ${config.port}`);
+
+  if (config.mcpPort) {
+    const apiBaseUrl = `http://localhost:${config.port}/v1`;
+    import('./mcp.mjs')
+      .then(({ startMcpServer }) => {
+        startMcpServer(config.mcpPort, apiBaseUrl);
+        logger.info(`MCP server listening on port ${config.mcpPort} (HTTP: /mcp, SSE: /sse)`);
+      })
+      .catch((err) => {
+        logger.error(`Failed to start MCP server: ${err.message}`);
+      });
+  }
 });

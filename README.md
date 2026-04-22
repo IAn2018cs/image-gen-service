@@ -8,9 +8,9 @@
 |---|:---:|:---:|---|
 | `flux` | Y | Y | FAL (Flux Kontext Max) |
 | `flux-2-pro` | Y | Y | FAL (Flux 2 Pro) |
-| `gemini` | Y | Y | Google Gemini 2.5 Flash |
-| `gemini3` | Y | Y | Google Gemini 3 Pro |
-| `gemini31flash` | Y | Y | Google Gemini 3.1 Flash |
+| `nano-banana` | Y | Y | Google Gemini 2.5 Flash |
+| `nano-banana-pro` | Y | Y | Google Gemini 3 Pro |
+| `nano-banana-2` | Y | Y | Google Gemini 3.1 Flash |
 | `seedream` | Y | Y | 火山引擎 (Seedream 4.0) |
 | `seedream45` | Y | Y | 火山引擎 (Seedream 4.5) |
 | `hunyuan` | Y | - | FAL (Hunyuan-Image-3) |
@@ -26,7 +26,7 @@
 
 ```bash
 cp .env.example .env
-# 编辑 .env，填入需要的 API Key 和 NAS 配置
+# 编辑 .env，填入需要的 API Key
 ```
 
 ### 2. Docker 部署
@@ -41,6 +41,100 @@ docker compose up -d --build
 npm install
 npm run dev    # 带热重载
 ```
+
+## MCP 接入
+
+服务内置 [MCP](https://modelcontextprotocol.io/) 服务器（基于 [fastmcp](https://github.com/punkpeye/fastmcp)），支持将图片生成能力直接接入 Claude Desktop、Cursor 等任意 MCP 兼容客户端，无需额外脚本。
+
+### 启用 MCP
+
+在 `.env` 中设置 `MCP_PORT`（Docker 部署默认已开启）：
+
+```bash
+MCP_PORT=3101
+```
+
+重启服务后，MCP 服务器会随主服务一同启动：
+
+```
+[FastMCP info] server is running on HTTP Stream at http://localhost:3101/mcp
+```
+
+### 客户端配置
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)：
+
+```json
+{
+  "mcpServers": {
+    "image-gen": {
+      "url": "http://localhost:3101/mcp"
+    }
+  }
+}
+```
+
+**Cursor / 其他支持 MCP 的工具**，填入 HTTP Stream 地址：
+
+```
+http://localhost:3101/mcp
+```
+
+SSE 兼容地址（旧版客户端）：
+
+```
+http://localhost:3101/sse
+```
+
+### 可用 Tools
+
+| Tool | 说明 | 必填参数 |
+|---|---|---|
+| `generate_image` | 文生图 | `model`, `prompt` |
+| `edit_image` | 图片编辑 | `model`, `prompt`, `images`（URL 数组） |
+| `list_models` | 列出所有模型及能力 | — |
+
+所有可选参数（`aspect_ratio`、`size`、`n`、`output_format` 等）均与 REST API 一致，见[可选参数](#可选参数)。
+
+## AI 编码助手技能集成
+
+服务启动后，可将 `image-gen` 技能安装到 AI 编码助手中，之后直接用自然语言指令生图改图。
+
+### 安装技能
+
+将 `skills/image-gen` 目录复制到对应工具的技能目录：
+
+```bash
+# Claude Code
+cp -r skills/image-gen ~/.claude/skills/
+
+# Codex
+cp -r skills/image-gen ~/.codex/skills/
+
+# Gemini CLI
+cp -r skills/image-gen ~/.gemini/skills/
+
+# Antigravity
+cp -r skills/image-gen ~/.gemini/antigravity/skills/
+```
+
+### 使用示例
+
+安装后，在 AI 助手的对话中直接用自然语言触发：
+
+```
+帮我生成一张赛博朋克风格的城市夜景
+```
+
+```
+用 seedream45 画一张水墨山水画，云雾缭绕
+```
+
+```
+把 /tmp/photo.jpg 改成油画风格
+```
+
+技能会自动调用本地服务（`http://localhost:3100`），将图片保存到当前项目目录，并展示可点击的图片链接。
 
 ## API 接口
 
@@ -70,7 +164,7 @@ curl -X POST http://localhost:3100/v1/images/generations \
   "created": 1709712000,
   "model": "flux",
   "data": [
-    { "url": "http://nas-host:port/images/2026/03/06/uuid.png" }
+    { "url": "http://localhost:3100/images/2026/03/06/uuid.png" }
   ]
 }
 ```
@@ -81,7 +175,7 @@ curl -X POST http://localhost:3100/v1/images/generations \
 curl -X POST http://localhost:3100/v1/images/edits \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemini",
+    "model": "nano-banana",
     "prompt": "add a hat to the cat",
     "images": ["data:image/png;base64,..."]
   }'
@@ -91,7 +185,7 @@ curl -X POST http://localhost:3100/v1/images/edits \
 
 ```bash
 curl -X POST http://localhost:3100/v1/images/edits \
-  -F "model=gemini" \
+  -F "model=nano-banana" \
   -F "prompt=add a hat to the cat" \
   -F "image[]=@cat.png"
 ```
@@ -123,12 +217,11 @@ curl http://localhost:3100/v1/models
 ## 架构
 
 ```
-请求 → Express 路由 → Provider (调用上游API) → Storage (保存到NAS) → 返回 URL
+请求 → Express 路由 → Provider (调用上游API) → Storage (保存到本地) → 返回 URL
 ```
 
 - **Provider 模式**: 策略模式，每个模型独立 Provider，继承 BaseProvider
-- **存储模式**: 接口模式，当前实现为 LocalMountStorage (Docker 挂载 NAS)，可扩展 S3/OSS 等
-- **NAS 挂载**: Docker volume CIFS 挂载，应用只需写入本地路径
+- **存储模式**: 接口模式，当前实现为 LocalFileStorage，图片保存到 `./data/images/`，由 Express 内置文件服务通过 `/images/*` 路径访问，可扩展 S3/OSS 等
 
 ## 环境变量
 
@@ -162,6 +255,6 @@ src/
     ├── falPoller.js       # FAL 平台通信
     └── storage/
         ├── BaseStorage.js       # 存储接口
-        ├── LocalMountStorage.js # 本地挂载实现
+        ├── LocalFileStorage.js  # 本地文件存储实现
         └── index.js             # 存储工厂
 ```
